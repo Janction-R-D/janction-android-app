@@ -1,6 +1,4 @@
-import React, {useState, useEffect} from 'react';
-import type {PropsWithChildren} from 'react';
-import DeviceInfo from 'react-native-device-info';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -10,16 +8,16 @@ import {
   useColorScheme,
   View,
 } from 'react-native';
-
-import {Colors} from 'react-native/Libraries/NewAppScreen';
+import DeviceInfo from 'react-native-device-info';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
 import '@walletconnect/react-native-compat';
-import {WagmiConfig} from 'wagmi';
-import {mainnet, polygon, arbitrum} from 'viem/chains';
+import { WagmiConfig } from 'wagmi';
+import { mainnet, polygon, arbitrum } from 'viem/chains';
 import {
   createWeb3Modal,
   defaultWagmiConfig,
   Web3Modal,
-  W3mButton
+  W3mButton,
 } from '@web3modal/wagmi-react-native';
 
 // 1. Get projectId at https://cloud.walletconnect.com
@@ -39,7 +37,7 @@ const metadata = {
 
 const chains = [mainnet, polygon, arbitrum];
 
-const wagmiConfig = defaultWagmiConfig({chains, projectId, metadata});
+const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata });
 
 // 3. Create modal
 createWeb3Modal({
@@ -49,62 +47,51 @@ createWeb3Modal({
   enableAnalytics: true, // Optional - defaults to your Cloud configuration
 });
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <View style={styles.sectionContent}>{children}</View>
-    </View>
-  );
-}
-
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
-  const [deviceInfo, setDeviceInfo] = useState({
-    systemName: '',
-    systemVersion: '',
-    apiLevel: 0,
-    model: '',
-    manufacturer: '',
-    brand: '',
-    serialNumber: '',
-    androidId: '',
-  });
+  const [deviceInfo, setDeviceInfo] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
-      const systemName = DeviceInfo.getSystemName();
-      const systemVersion = DeviceInfo.getSystemVersion();
-      const apiLevel = await DeviceInfo.getApiLevel();
-      const model = DeviceInfo.getModel();
-      const manufacturer = await DeviceInfo.getManufacturer();
-      const brand = DeviceInfo.getBrand();
-      const serialNumber = await DeviceInfo.getSerialNumber();
-      const androidId = await DeviceInfo.getAndroidId();
-
-      setDeviceInfo({
-        systemName,
-        systemVersion,
-        apiLevel,
-        model,
-        manufacturer,
-        brand,
-        serialNumber,
-        androidId,
-      });
+      const info = {
+        uniqueId: await DeviceInfo.getUniqueId(),
+        instanceId: await DeviceInfo.getInstanceId(),
+        serialNumber: await DeviceInfo.getSerialNumber(),
+        androidId: await DeviceInfo.getAndroidId(),
+        ipAddress: await DeviceInfo.getIpAddress(),
+        macAddress: await DeviceInfo.getMacAddress(),
+        deviceId: DeviceInfo.getDeviceId(),
+        manufacturer: await DeviceInfo.getManufacturer(),
+        model: DeviceInfo.getModel(),
+        brand: DeviceInfo.getBrand(),
+        systemName: DeviceInfo.getSystemName(),
+        systemVersion: DeviceInfo.getSystemVersion(),
+        buildId: await DeviceInfo.getBuildId(),
+        apiLevel: await DeviceInfo.getApiLevel(),
+        bundleId: DeviceInfo.getBundleId(),
+        applicationName: DeviceInfo.getApplicationName(),
+        buildNumber: DeviceInfo.getBuildNumber(),
+        version: DeviceInfo.getVersion(),
+        readableVersion: DeviceInfo.getReadableVersion(),
+        deviceName: await DeviceInfo.getDeviceName(),
+        usedMemory: await DeviceInfo.getUsedMemory(),
+        totalMemory: await DeviceInfo.getTotalMemory(),
+        maxMemory: await DeviceInfo.getMaxMemory(),
+        totalDiskCapacity: await DeviceInfo.getTotalDiskCapacity(),
+        freeDiskStorage: await DeviceInfo.getFreeDiskStorage(),
+        batteryLevel: await DeviceInfo.getBatteryLevel(),
+        isBatteryCharging: await DeviceInfo.isBatteryCharging(),
+        isCameraPresent: await DeviceInfo.isCameraPresent(),
+        isEmulator: await DeviceInfo.isEmulator(),
+        isTablet: DeviceInfo.isTablet(),
+        isLowRamDevice: DeviceInfo.isLowRamDevice(),
+        isPinOrFingerprintSet: await DeviceInfo.isPinOrFingerprintSet(),
+        hasNotch: DeviceInfo.hasNotch(),
+        getPowerState: await DeviceInfo.getPowerState(),
+        deviceType: DeviceInfo.getDeviceType(),
+        supportedAbis: await DeviceInfo.supportedAbis(),
+      };
+      setDeviceInfo(info);
     };
 
     fetchData();
@@ -128,32 +115,19 @@ function App(): React.JSX.Element {
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
           <WagmiConfig config={wagmiConfig}>
-            
             <Web3Modal />
           </WagmiConfig>
-          <Section title="Device Info">
-            <Text style={styles.deviceInfoItem}>
-              System Name: {deviceInfo.systemName}
-            </Text>
-            <Text style={styles.deviceInfoItem}>
-              System Version: {deviceInfo.systemVersion}
-            </Text>
-            <Text style={styles.deviceInfoItem}>
-              API Level: {deviceInfo.apiLevel}
-            </Text>
-            <Text style={styles.deviceInfoItem}>Model: {deviceInfo.model}</Text>
-            <Text style={styles.deviceInfoItem}>
-              Manufacturer: {deviceInfo.manufacturer}
-            </Text>
-            <Text style={styles.deviceInfoItem}>Brand: {deviceInfo.brand}</Text>
-            <Text style={styles.deviceInfoItem}>
-              Serial Number: {deviceInfo.serialNumber}
-            </Text>
-            <Text style={styles.deviceInfoItem}>
-              Android ID: {deviceInfo.androidId}
-            </Text>
-          </Section>
-          <W3mButton />
+          <View style={styles.sectionContainer}>
+            <W3mButton />
+          </View>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Device Info</Text>
+            {Object.entries(deviceInfo).map(([key, value]) => (
+              <Text style={styles.deviceInfoItem} key={key}>
+                {key}: {String(value)}
+              </Text>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -168,14 +142,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 24,
     fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  sectionContent: {
-    marginTop: 8,
   },
   deviceInfoItem: {
     fontSize: 16,
