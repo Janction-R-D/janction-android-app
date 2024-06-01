@@ -1,12 +1,5 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React, { useState, useEffect } from 'react';
-import type { PropsWithChildren } from 'react';
+import React, {useState, useEffect} from 'react';
+import type {PropsWithChildren} from 'react';
 import DeviceInfo from 'react-native-device-info';
 import {
   SafeAreaView,
@@ -18,15 +11,49 @@ import {
   View,
 } from 'react-native';
 
+import {Colors} from 'react-native/Libraries/NewAppScreen';
+import '@walletconnect/react-native-compat';
+import {WagmiConfig} from 'wagmi';
+import {mainnet, polygon, arbitrum} from 'viem/chains';
 import {
-  Colors,
-} from 'react-native/Libraries/NewAppScreen';
+  createWeb3Modal,
+  defaultWagmiConfig,
+  Web3Modal,
+  W3mButton
+} from '@web3modal/wagmi-react-native';
+
+// 1. Get projectId at https://cloud.walletconnect.com
+const projectId = '1dbb1d99d61bae1544b4a7f06b9f2575';
+
+// 2. Create config
+const metadata = {
+  name: 'Web3Modal RN',
+  description: 'Web3Modal RN Example',
+  url: 'https://web3modal.com',
+  icons: ['https://avatars.githubusercontent.com/u/37784886'],
+  redirect: {
+    native: 'YOUR_APP_SCHEME://',
+    universal: 'YOUR_APP_UNIVERSAL_LINK.com',
+  },
+};
+
+const chains = [mainnet, polygon, arbitrum];
+
+const wagmiConfig = defaultWagmiConfig({chains, projectId, metadata});
+
+// 3. Create modal
+createWeb3Modal({
+  projectId,
+  chains,
+  wagmiConfig,
+  enableAnalytics: true, // Optional - defaults to your Cloud configuration
+});
 
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
-function Section({ children, title }: SectionProps): React.JSX.Element {
+function Section({children, title}: SectionProps): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
   return (
     <View style={styles.sectionContainer}>
@@ -36,13 +63,10 @@ function Section({ children, title }: SectionProps): React.JSX.Element {
           {
             color: isDarkMode ? Colors.white : Colors.black,
           },
-        ]}
-      >
+        ]}>
         {title}
       </Text>
-      <View style={styles.sectionContent}>
-        {children}
-      </View>
+      <View style={styles.sectionContent}>{children}</View>
     </View>
   );
 }
@@ -98,23 +122,38 @@ function App(): React.JSX.Element {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}
-      >
+        style={backgroundStyle}>
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}
-        >
+          }}>
+          <WagmiConfig config={wagmiConfig}>
+            
+            <Web3Modal />
+          </WagmiConfig>
           <Section title="Device Info">
-            <Text style={styles.deviceInfoItem}>System Name: {deviceInfo.systemName}</Text>
-            <Text style={styles.deviceInfoItem}>System Version: {deviceInfo.systemVersion}</Text>
-            <Text style={styles.deviceInfoItem}>API Level: {deviceInfo.apiLevel}</Text>
+            <Text style={styles.deviceInfoItem}>
+              System Name: {deviceInfo.systemName}
+            </Text>
+            <Text style={styles.deviceInfoItem}>
+              System Version: {deviceInfo.systemVersion}
+            </Text>
+            <Text style={styles.deviceInfoItem}>
+              API Level: {deviceInfo.apiLevel}
+            </Text>
             <Text style={styles.deviceInfoItem}>Model: {deviceInfo.model}</Text>
-            <Text style={styles.deviceInfoItem}>Manufacturer: {deviceInfo.manufacturer}</Text>
+            <Text style={styles.deviceInfoItem}>
+              Manufacturer: {deviceInfo.manufacturer}
+            </Text>
             <Text style={styles.deviceInfoItem}>Brand: {deviceInfo.brand}</Text>
-            <Text style={styles.deviceInfoItem}>Serial Number: {deviceInfo.serialNumber}</Text>
-            <Text style={styles.deviceInfoItem}>Android ID: {deviceInfo.androidId}</Text>
+            <Text style={styles.deviceInfoItem}>
+              Serial Number: {deviceInfo.serialNumber}
+            </Text>
+            <Text style={styles.deviceInfoItem}>
+              Android ID: {deviceInfo.androidId}
+            </Text>
           </Section>
+          <W3mButton />
         </View>
       </ScrollView>
     </SafeAreaView>
