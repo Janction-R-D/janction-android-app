@@ -5,8 +5,9 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useState, useEffect } from 'react';
+import type { PropsWithChildren } from 'react';
+import DeviceInfo from 'react-native-device-info';
 import {
   SafeAreaView,
   ScrollView,
@@ -19,17 +20,13 @@ import {
 
 import {
   Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
-function Section({children, title}: SectionProps): React.JSX.Element {
+function Section({ children, title }: SectionProps): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
   return (
     <View style={styles.sectionContainer}>
@@ -39,24 +36,55 @@ function Section({children, title}: SectionProps): React.JSX.Element {
           {
             color: isDarkMode ? Colors.white : Colors.black,
           },
-        ]}>
+        ]}
+      >
         {title}
       </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
+      <View style={styles.sectionContent}>
         {children}
-      </Text>
+      </View>
     </View>
   );
 }
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+  const [deviceInfo, setDeviceInfo] = useState({
+    systemName: '',
+    systemVersion: '',
+    apiLevel: 0,
+    model: '',
+    manufacturer: '',
+    brand: '',
+    serialNumber: '',
+    androidId: '',
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const systemName = DeviceInfo.getSystemName();
+      const systemVersion = DeviceInfo.getSystemVersion();
+      const apiLevel = await DeviceInfo.getApiLevel();
+      const model = DeviceInfo.getModel();
+      const manufacturer = await DeviceInfo.getManufacturer();
+      const brand = DeviceInfo.getBrand();
+      const serialNumber = await DeviceInfo.getSerialNumber();
+      const androidId = await DeviceInfo.getAndroidId();
+
+      setDeviceInfo({
+        systemName,
+        systemVersion,
+        apiLevel,
+        model,
+        manufacturer,
+        brand,
+        serialNumber,
+        androidId,
+      });
+    };
+
+    fetchData();
+  }, []);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -70,26 +98,23 @@ function App(): React.JSX.Element {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
+        style={backgroundStyle}
+      >
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
+          }}
+        >
+          <Section title="Device Info">
+            <Text style={styles.deviceInfoItem}>System Name: {deviceInfo.systemName}</Text>
+            <Text style={styles.deviceInfoItem}>System Version: {deviceInfo.systemVersion}</Text>
+            <Text style={styles.deviceInfoItem}>API Level: {deviceInfo.apiLevel}</Text>
+            <Text style={styles.deviceInfoItem}>Model: {deviceInfo.model}</Text>
+            <Text style={styles.deviceInfoItem}>Manufacturer: {deviceInfo.manufacturer}</Text>
+            <Text style={styles.deviceInfoItem}>Brand: {deviceInfo.brand}</Text>
+            <Text style={styles.deviceInfoItem}>Serial Number: {deviceInfo.serialNumber}</Text>
+            <Text style={styles.deviceInfoItem}>Android ID: {deviceInfo.androidId}</Text>
           </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -110,8 +135,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '400',
   },
-  highlight: {
-    fontWeight: '700',
+  sectionContent: {
+    marginTop: 8,
+  },
+  deviceInfoItem: {
+    fontSize: 16,
+    marginBottom: 4,
   },
 });
 
