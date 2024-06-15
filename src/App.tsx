@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
+  Button,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -9,47 +10,23 @@ import {
   View,
 } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
 import '@walletconnect/react-native-compat';
-import { WagmiConfig } from 'wagmi';
-import { mainnet, polygon, arbitrum } from 'viem/chains';
-import {
-  createWeb3Modal,
-  defaultWagmiConfig,
-  Web3Modal,
-  W3mButton,
-} from '@web3modal/wagmi-react-native';
-
-// 1. Get projectId at https://cloud.walletconnect.com
-const projectId = '1dbb1d99d61bae1544b4a7f06b9f2575';
-
-// 2. Create config
-const metadata = {
-  name: 'Web3Modal RN',
-  description: 'Web3Modal RN Example',
-  url: 'https://web3modal.com',
-  icons: ['https://avatars.githubusercontent.com/u/37784886'],
-  redirect: {
-    native: 'YOUR_APP_SCHEME://',
-    universal: 'YOUR_APP_UNIVERSAL_LINK.com',
-  },
-};
-
-const chains = [mainnet, polygon, arbitrum];
-
-const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata });
-
-// 3. Create modal
-createWeb3Modal({
-  projectId,
-  chains,
-  wagmiConfig,
-  enableAnalytics: true, // Optional - defaults to your Cloud configuration
-});
+import {useAccount, useSignMessage, useChainId} from 'wagmi';
+import {Web3Modal, W3mButton} from '@web3modal/wagmi-react-native';
+import {SiweMessage} from 'siwe';
+import {ParamCreateDeviceInfo, ParamLogin} from './types';
+import {fetchNonce, fetchDeviceInfo, submitDeviceInfo, login} from './services';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
-  const [deviceInfo, setDeviceInfo] = useState({});
+  const chainId = useChainId();
+  const {address, isConnecting, isDisconnected} = useAccount();
+  const {data, isError, isLoading, isSuccess, signMessage} = useSignMessage();
+
+  const [deviceInfo, setDeviceInfo] = useState<ParamCreateDeviceInfo>();
+  const [nonce, setNonce] = useState<string>();
+  const [token, setToken] = useState<string>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,15 +64,67 @@ function App(): React.JSX.Element {
         isLowRamDevice: DeviceInfo.isLowRamDevice(),
         isPinOrFingerprintSet: await DeviceInfo.isPinOrFingerprintSet(),
         hasNotch: DeviceInfo.hasNotch(),
-        getPowerState: await DeviceInfo.getPowerState(),
+        powerState: JSON.stringify(await DeviceInfo.getPowerState()),
         deviceType: DeviceInfo.getDeviceType(),
-        supportedAbis: await DeviceInfo.supportedAbis(),
+        supportedAbis: JSON.stringify(await DeviceInfo.supportedAbis()),
       };
       setDeviceInfo(info);
     };
 
     fetchData();
   }, []);
+
+  const handleLogin = async () => {
+    if (!address) {
+      throw new Error('address undefined');
+    }
+    const nonce = await fetchNonce();
+
+    setNonce(nonce);
+
+    const siweMessage = new SiweMessage({
+      domain: 'janction.com',
+      address,
+      statement: 'Sign in Janction with your wallet.',
+      uri: 'https://janction.com',
+      version: '1',
+      chainId,
+      nonce,
+    });
+
+    const message = siweMessage.prepareMessage();
+
+    signMessage({
+      message,
+    });
+
+    if (isSuccess) {
+      const signature = data as string;
+      const param: ParamLogin = {
+        message,
+        signature,
+      };
+
+      const token = await login(param);
+      setToken(token)
+    }
+  };
+
+  const handleGetAllDevices = async () => {
+    const res = await fetchDeviceInfo();
+    console.log({res});
+  };
+
+  const handleSubmitDeviceInfo = async () => {
+    if (!deviceInfo) {
+      throw new Error('device info undefined');
+    }
+    if (!token) {
+      throw new Error('token undefined');
+    }
+    const res = await submitDeviceInfo(token, deviceInfo);
+    console.log({res});
+  };
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -114,19 +143,39 @@ function App(): React.JSX.Element {
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
-          <WagmiConfig config={wagmiConfig}>
-            <Web3Modal />
-          </WagmiConfig>
+          <Web3Modal />
           <View style={styles.sectionContainer}>
             <W3mButton />
           </View>
+          <View>
+            <Text style={styles.deviceInfoItem} key="address">
+              {'address'}: {String(address)}
+            </Text>
+          </View>
+          <Button title="login" onPress={handleLogin} />
+          <View>
+            <Text style={styles.deviceInfoItem} key="nonce">
+              {'nonce'}: {String(nonce)}
+            </Text>
+          </View>
+          <View>
+            <Text style={styles.deviceInfoItem} key="token">
+              {'token'}: {String(token)}
+            </Text>
+          </View>
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Device Info</Text>
-            {Object.entries(deviceInfo).map(([key, value]) => (
+            {Object.entries(deviceInfo ?? {}).map(([key, value]) => (
               <Text style={styles.deviceInfoItem} key={key}>
                 {key}: {String(value)}
               </Text>
             ))}
+          </View>
+          <View>
+            <Button title="submit" onPress={handleSubmitDeviceInfo} />
+          </View>
+          <View>
+            <Button title="devices" onPress={handleGetAllDevices} />
           </View>
         </View>
       </ScrollView>

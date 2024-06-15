@@ -1,0 +1,43 @@
+export interface ParamLogin {
+  message: string;
+  signature: string;
+}
+
+export interface ParamCreateDeviceInfo {
+  uniqueId: string;
+  instanceId: string;
+  serialNumber: string;
+  androidId: string;
+  ipAddress: string;
+  macAddress: string;
+  deviceId: string;
+  manufacturer: string;
+  model: string;
+  brand: string;
+  systemName: string;
+  systemVersion: string;
+  buildId: string;
+  apiLevel: number;
+  bundleId: string;
+  applicationName: string;
+  buildNumber: string;
+  version: string;
+  readableVersion: string;
+  deviceName: string;
+  usedMemory: number;
+  totalMemory: number;
+  maxMemory: number;
+  totalDiskCapacity: number;
+  freeDiskStorage: number;
+  batteryLevel: number;
+  isBatteryCharging: boolean;
+  isCameraPresent: boolean;
+  isEmulator: boolean;
+  isTablet: boolean;
+  isLowRamDevice: boolean;
+  isPinOrFingerprintSet: boolean;
+  hasNotch: boolean;
+  powerState: string;
+  deviceType: string;
+  supportedAbis: string;
+}
