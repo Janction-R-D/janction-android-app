@@ -81,6 +81,11 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+
+        ndk {
+            moduleName "ncnn"
+            abiFilters "armeabi-v7a", "arm64-v8a"
+        }
     }
     signingConfigs {
         debug {
@@ -90,6 +95,14 @@ android {
             keyPassword 'android'
         }
     }
+
+    externalNativeBuild {
+        cmake {
+            version "3.22.1"
+            path file('src/main/jni/CMakeLists.txt')
+        }
+    }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
@@ -113,6 +126,10 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'androidx.core:core-ktx:1.6.0'
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)

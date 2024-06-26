@@ -1,5 +1,12 @@
 import React from 'react';
-import {mainnet, polygon, arbitrum} from 'viem/chains';
+import {
+  mainnet,
+  polygon,
+  arbitrum,
+  optimism,
+  optimismSepolia,
+  optimismGoerli,
+} from 'viem/chains';
 import {
   createWeb3Modal,
   defaultWagmiConfig,
@@ -10,17 +17,17 @@ import App from './App';
 const projectId = '1dbb1d99d61bae1544b4a7f06b9f2575';
 
 const metadata = {
-  name: 'Web3Modal RN',
-  description: 'Web3Modal RN Example',
-  url: 'https://web3modal.com',
-  icons: ['https://avatars.githubusercontent.com/u/37784886'],
+  name: 'Janction App',
+  description: 'Janction App For Node',
+  url: 'https://janction.io',
+  icons: ['https://avatars.githubusercontent.com/u/37784886'], // TODO
   redirect: {
-    native: 'YOUR_APP_SCHEME://',
-    universal: 'YOUR_APP_UNIVERSAL_LINK.com',
+    native: 'YOUR_APP_SCHEME://', // TODO
+    universal: 'YOUR_APP_UNIVERSAL_LINK.com', // TODO
   },
 };
 
-const chains = [mainnet, polygon, arbitrum];
+const chains = [optimism, optimismSepolia, optimismGoerli];
 
 const wagmiConfig = defaultWagmiConfig({chains, projectId, metadata});
 

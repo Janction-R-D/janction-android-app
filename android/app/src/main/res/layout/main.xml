@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:background="#222222"
+    >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/linearlayout_boder">
+         
+
+        <!--        <Button-->
+        <!--            android:id="@+id/buttonImage"-->
+        <!--            android:layout_width="wrap_content"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:text="获取内置图片" />-->
+
+        <!-- <Button
+            android:id="@+id/buttonDetect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CPU" /> -->
+
+        <Button
+            android:id="@+id/buttonDetectGPU"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#DD5ACC"
+            android:textColor="#FFFFFF"
+            android:text="Run With GPU " />
+
+        <!--        <Button-->
+        <!--            android:id="@+id/clear_btn"-->
+        <!--            android:layout_width="55dp"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:text="清空" />-->
+
+
+        <TextView
+            android:id="@+id/exec_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="内容"
+            android:textColor="#FFFFFF"
+
+            android:layout_marginLeft="5dp"
+            />
+    </LinearLayout>
+
+ <TextView
+        android:id="@+id/defaultRunWithCPU"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Logs (default run with cpu)"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="10dp"
+        android:padding="10dp" />
+
+    <!--    <GridLayout-->
+    <!--        android:id="@+id/imageViews"-->
+    <!--        android:layout_width="fill_parent"-->
+    <!--        android:layout_height="fill_parent"-->
+    <!--        android:layout_weight="1"-->
+    <!--        android:columnCount="10"-->
+    <!--        android:rowCount="10" />-->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1" />
+
+
+</LinearLayout>
