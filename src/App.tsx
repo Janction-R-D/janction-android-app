@@ -130,8 +130,9 @@ function App(): React.JSX.Element {
       showToastWithGravity('Please Connect Wallet!');
       return;
     }
-
+    showToastWithGravity('Test test ');
     const nonce = await fetchNonce();
+    showToastWithGravity('nonnce ' + nonce);
 
     setNonce(nonce);
 
@@ -280,7 +281,7 @@ function App(): React.JSX.Element {
             </Text>
           </View>
           <View>
-            <Text style={styles.deviceInfoItem} key="token">
+            <Text style={styles.deviceInfoItem} key="dtoken">
               {'token'}: {String(token)}
             </Text>
           </View>

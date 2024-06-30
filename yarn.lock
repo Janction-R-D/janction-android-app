@@ -8164,9 +8164,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"janction-android-app@workspace:.":
+"janctionmobile@workspace:.":
   version: 0.0.0-use.local
-  resolution: "janction-android-app@workspace:."
+  resolution: "janctionmobile@workspace:."
   dependencies:
     "@babel/core": ^7.20.0
     "@babel/preset-env": ^7.20.0
