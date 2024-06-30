@@ -57,11 +57,14 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     if (token) {
-      (async () => {
-        const params: ParamGetNodeInfos = {};
-        const nodeInfos = await fetchNodeInfos(token, params);
-        setNodeInfos(nodeInfos);
-      })();
+      const intervalId = setInterval(handleFetchNodeInfos, 10000);
+      return () => clearInterval(intervalId);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      handleFetchNodeInfos();
     }
   }, [token]);
 
@@ -165,6 +168,15 @@ function App(): React.JSX.Element {
       await storeToken(token);
     }
   };
+
+  const handleFetchNodeInfos = async () => {
+    if (!token) {
+      throw new Error('token undefined');
+    }
+    const params: ParamGetNodeInfos = {};
+    const nodeInfos = await fetchNodeInfos(token, params);
+    setNodeInfos(nodeInfos);
+  }
 
   const handleCPUGPUSetting = async () => {
     console.log('handleCPUGPUSetting');
