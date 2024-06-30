@@ -6,7 +6,7 @@ export const fetchNonce = async () => {
   return res.data.nonce;
 };
 
-export const login = async (params: ParamLogin) => {
+export const performLogin = async (params: ParamLogin) => {
   const res = await http.post('auth/login', params, {
     headers: {
       'Content-Type': 'application/json',

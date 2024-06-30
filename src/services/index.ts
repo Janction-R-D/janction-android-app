@@ -1,2 +1,2 @@
-export * from "./device_info"
+export * from "./heartbeat"
 export * from "./login"

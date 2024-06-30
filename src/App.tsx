@@ -1,19 +1,14 @@
 import React, {useState, useEffect} from 'react';
 import {
-  Button,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
-  Pressable,
   View,
   Image,
   Dimensions,
-  Alert,
   ToastAndroid,
-  FlatList,
 } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
@@ -21,10 +16,19 @@ import '@walletconnect/react-native-compat';
 import {useAccount, useSignMessage, useChainId} from 'wagmi';
 import {Web3Modal, W3mButton} from '@web3modal/wagmi-react-native';
 import {SiweMessage} from 'siwe';
-import {ParamCreateDeviceInfo, ParamLogin} from './types';
-import {fetchNonce, fetchDeviceInfo, submitDeviceInfo, login} from './services';
+import {
+  Device,
+  NodeInfo,
+  ParamGetNodeInfos,
+  ParamHeartbeat,
+  ParamLogin,
+} from './types';
+import {fetchNonce, performLogin, performHeartbeat} from './services';
 import NavigationModule from './utils/NavigationModule';
 import CustomButton from './components/CBtn';
+import {convertDeviceToParamHeartbeat} from './utils';
+import {storeToken, getToken, removeToken} from './store';
+import {fetchNodeInfos} from './services/node';
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
 function App(): React.JSX.Element {
@@ -34,17 +38,45 @@ function App(): React.JSX.Element {
 
   const chainId = useChainId();
   const {address, isConnecting, isDisconnected} = useAccount();
-  const {data, isError, isLoading, isSuccess, signMessageAsync} =
-    useSignMessage();
+  const {data, isSuccess, signMessageAsync} = useSignMessage();
 
-  const [deviceInfo, setDeviceInfo] = useState<ParamCreateDeviceInfo>();
+  const [deviceInfo, setDeviceInfo] = useState<Device>();
   const [nonce, setNonce] = useState<string>();
   const [token, setToken] = useState<string>();
-  const showToastWithGravity = text => {
+  const [nodeInfos, setNodeInfos] = useState<NodeInfo[]>();
+  const showToastWithGravity = (text: string) => {
     ToastAndroid.showWithGravity(text, ToastAndroid.SHORT, ToastAndroid.CENTER);
   };
+
   useEffect(() => {
-    const fetchData = async () => {
+    if (token) {
+      const intervalId = setInterval(handleHeartbeat, 5000);
+      return () => clearInterval(intervalId);
+    }
+  }, [token, deviceInfo]);
+
+  useEffect(() => {
+    if (token) {
+      (async () => {
+        const params: ParamGetNodeInfos = {};
+        const nodeInfos = await fetchNodeInfos(token, params);
+        setNodeInfos(nodeInfos);
+      })();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      const token = await getToken();
+      if (token) {
+        setToken(token);
+      }
+    };
+    fetchToken();
+  }, []);
+
+  useEffect(() => {
+    const fetchDevice = async () => {
       const info = {
         uniqueId: await DeviceInfo.getUniqueId(),
         instanceId: await DeviceInfo.getInstanceId(),
@@ -86,15 +118,19 @@ function App(): React.JSX.Element {
       setDeviceInfo(info);
     };
 
-    fetchData();
+    fetchDevice();
   }, []);
 
   const handleLogin = async () => {
+    if (!deviceInfo) {
+      showToastWithGravity('Waitting for device info detect!');
+      return;
+    }
     if (!address) {
       showToastWithGravity('Please Connect Wallet!');
       return;
-      throw new Error('address undefined');
     }
+
     const nonce = await fetchNonce();
 
     setNonce(nonce);
@@ -102,7 +138,7 @@ function App(): React.JSX.Element {
     const siweMessage = new SiweMessage({
       domain: 'janction.io',
       address,
-      statement: 'Sign in Janction with your wallet.',
+      statement: deviceInfo.uniqueId,
       uri: 'https://janction.io',
       version: '1',
       chainId,
@@ -117,23 +153,16 @@ function App(): React.JSX.Element {
 
     if (isSuccess) {
       const signature = data as string;
-      const param: ParamLogin = {
+      const params: ParamLogin = {
         message,
         signature,
+        is_node: true,
       };
 
-      const token = await login(param);
+      const token = await performLogin(params);
       setToken(token);
+      await storeToken(token);
     }
-  };
-
-  const handleGetAllDevices = async () => {
-    if (!token) {
-      showToastWithGravity('Please Login!');
-      return;
-    }
-    const res = await fetchDeviceInfo();
-    console.log({res});
   };
 
   const handleCPUGPUSetting = async () => {
@@ -141,14 +170,15 @@ function App(): React.JSX.Element {
     NavigationModule.navigateToActivity('com.janctionmobile.YourActivity');
   };
 
-  const handleSubmitDeviceInfo = async () => {
+  const handleHeartbeat = async () => {
     if (!deviceInfo) {
       throw new Error('device info undefined');
     }
     if (!token) {
       throw new Error('token undefined');
     }
-    const res = await submitDeviceInfo(token, deviceInfo);
+    const params: ParamHeartbeat = convertDeviceToParamHeartbeat(deviceInfo);
+    const res = await performHeartbeat(token, params);
     console.log({res});
   };
 
@@ -189,10 +219,6 @@ function App(): React.JSX.Element {
               onPress={handleLogin}
               title={'Login'}
             />
-            {/* <CustomButton onPress={handleGetAllDevices} title={'My Nodes'} /> */}
-            {/* <View>
-                <Button title="CPU/GPU SETTING" onPress={handleCPUGPUSetting} />
-              </View> */}
           </View>
 
           <Text style={styles.subTitle} key="online-nodes">
@@ -208,24 +234,16 @@ function App(): React.JSX.Element {
             )}
             {token && (
               <View>
-                <View style={styles.listRow}>
-                  <Text style={styles.listAlive}></Text>
-                  <Text style={styles.list}>
-                    Android, NodeID(12846268743), 1034 Point
-                  </Text>
-                </View>
-                <View style={styles.listRow}>
-                  <Text style={styles.listAlive}></Text>
-                  <Text style={styles.list}>
-                    MacOS, CPU, NodeID(7236726431), 14 Point
-                  </Text>
-                </View>
-                <View style={styles.listRow}>
-                  <Text style={styles.listAlive}></Text>
-                  <Text style={styles.list}>
-                    Linux, GPU, NodeID(12846268743), 1034 Point
-                  </Text>
-                </View>
+                {nodeInfos?.map(nodeInfo => (
+                  <View style={styles.listRow}>
+                    <Text style={styles.listAlive}></Text>
+                    <Text style={styles.list}>
+                      {`OS(${nodeInfo.node_type}), NodeID(${
+                        nodeInfo.node_id
+                      }), Online(${nodeInfo.heartbeat_count * 5}s)`}
+                    </Text>
+                  </View>
+                ))}
               </View>
             )}
           </View>
@@ -239,21 +257,10 @@ function App(): React.JSX.Element {
             title={'Running Job'}
           />
 
-          {/* <View>
-            <Text style={styles.deviceInfoItem} key="address">
-              {'address'}: {String(address)}
-            </Text>
-          </View> */}
-          {/* {isConnecting && <>sss</>} */}
-
           <Text style={styles.subTitle}>Device Info</Text>
 
           <View style={styles.table}>
             {Object.entries(deviceInfo ?? {}).map(([key, value]) => (
-              // <Text style={styles.deviceInfoItem} key={key}>
-              //   {key}: {String(value)}
-              // </Text>
-
               <View style={styles.row}>
                 <Text style={styles.cell} key={key}>
                   {key}
@@ -277,17 +284,6 @@ function App(): React.JSX.Element {
               {'token'}: {String(token)}
             </Text>
           </View>
-          {/* <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Device Info</Text>
-            {Object.entries(deviceInfo ?? {}).map(([key, value]) => (
-              <Text style={styles.deviceInfoItem} key={key}>
-                {key}: {String(value)}
-              </Text>
-            ))}
-          </View> */}
-          {/* <View>
-            <Button title="submit" onPress={handleSubmitDeviceInfo} />
-          </View> */}
         </View>
       </ScrollView>
     </SafeAreaView>
