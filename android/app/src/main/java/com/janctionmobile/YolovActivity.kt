@@ -40,8 +40,9 @@ class YolovActivity : Activity() {
     private val bitmaps = ArrayList<Bitmap>()
     private var yourSelectedImage: Bitmap? = null
     private val yolov5ncnn = YoloV5Ncnn()
-    private var isCPU = true
+    @Volatile private var isCPU = true
     @Volatile private var dealSuccess = true
+    @Volatile private var shouldStopThread = false
 
     private lateinit var mAdapter: TextAdapter
     private lateinit var recyclerView: RecyclerView
@@ -105,6 +106,9 @@ class YolovActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         // 这里执行销毁时的操作，例如释放资源
+        Log.d("deal", "onDestroy")
+        dealSuccess = false
+        shouldStopThread = true
         uiHandler.removeCallbacksAndMessages(null)
     }
 
@@ -146,40 +150,56 @@ class YolovActivity : Activity() {
                 val startTime = System.currentTimeMillis()
 
                 val t = Thread {
-                    dealSuccess = false
-                    val processedBitmaps = ArrayList<Bitmap>()
-                    for (bitmap in bitmaps) {
-                        val objects = yolov5ncnn.Detect(bitmap, isCPU)
-                        val nBitmap = getDealBitmap(bitmap, objects)
-                        nBitmap?.let { processedBitmaps.add(it) }
-                    }
+                    if (dealSuccess == true) {
+                        dealSuccess = false
+                        val processedBitmaps = ArrayList<Bitmap>()
 
-                    val endTime = System.currentTimeMillis()
-                    val executionTime = endTime - startTime
-                    // TODO 改日志
-                    Log.d("deal", "结束执行代码，时间: $endTime")
-                    Log.d("deal", "代码执行时间: $executionTime 毫秒")
+                        for (bitmap in bitmaps) {
+                            if (!shouldStopThread) {
+                                val objects = yolov5ncnn.Detect(bitmap, isCPU)
+                                val nBitmap = getDealBitmap(bitmap, objects)
+                                nBitmap?.let { processedBitmaps.add(it) }
+                            }
+                        }
 
-                    uiHandler.post {
-                        execTv?.text = if (isCPU) "${formatTime(System.currentTimeMillis())} [CPU] [YoloV5Ncnn] cost ${executionTime} ms" else "${formatTime(System.currentTimeMillis())} [GPU] [YoloV5Ncnn] cost ${executionTime } ms"
-                        dealSuccess = true
-                        mAdapter.addText(if (isCPU) "${formatTime(System.currentTimeMillis())} [CPU] [YoloV5Ncnn] cost ${executionTime} ms" else "${formatTime(System.currentTimeMillis())} [GPU] [YoloV5Ncnn] cost ${executionTime} ms")
-                        mAdapter.notifyDataSetChanged()
-                        recyclerView.scrollToPosition(mAdapter.itemCount - 1)
-                        // imageViews?.removeAllViews()
-                        // for (nBitmap in processedBitmaps) {
-                        //    val img = ImageView(this@YolovActivity)
-                        //    img.setImageBitmap(nBitmap)
-                        //    val params = GridLayout.LayoutParams()
-                        //    val screenWidth = ScreenUtils.getScreenWidth(this@YolovActivity)
-                        //    val screenHeight = ScreenUtils.getScreenHeight(this@YolovActivity)
-                        //    params.width = screenWidth / 10
-                        //    params.height = screenHeight / 10
-                        //    img.layoutParams = params
-                        //    imageViews?.addView(img)
-                        // }
-                        // 再次执行任务
-                        uiHandler.postDelayed(this, 1000)
+                        val endTime = System.currentTimeMillis()
+                        val executionTime = endTime - startTime
+                        // TODO 改日志
+                        Log.d("deal", "结束执行代码，时间: $endTime")
+                        Log.d("deal", "代码执行时间: $executionTime 毫秒")
+
+                        uiHandler.post {
+                            execTv?.text =
+                                if (isCPU) "${formatTime(System.currentTimeMillis())} [CPU] [YoloV5Ncnn] cost ${executionTime} ms" else "${
+                                    formatTime(System.currentTimeMillis())
+                                } [GPU] [YoloV5Ncnn] cost ${executionTime} ms"
+                            if (!shouldStopThread) {
+                                dealSuccess = true
+                            }
+                            mAdapter.addText(
+                                if (isCPU) "${formatTime(System.currentTimeMillis())} [CPU] [YoloV5Ncnn] cost ${executionTime} ms" else "${
+                                    formatTime(
+                                        System.currentTimeMillis()
+                                    )
+                                } [GPU] [YoloV5Ncnn] cost ${executionTime} ms"
+                            )
+                            mAdapter.notifyDataSetChanged()
+                            recyclerView.scrollToPosition(mAdapter.itemCount - 1)
+                            // imageViews?.removeAllViews()
+                            // for (nBitmap in processedBitmaps) {
+                            //    val img = ImageView(this@YolovActivity)
+                            //    img.setImageBitmap(nBitmap)
+                            //    val params = GridLayout.LayoutParams()
+                            //    val screenWidth = ScreenUtils.getScreenWidth(this@YolovActivity)
+                            //    val screenHeight = ScreenUtils.getScreenHeight(this@YolovActivity)
+                            //    params.width = screenWidth / 10
+                            //    params.height = screenHeight / 10
+                            //    img.layoutParams = params
+                            //    imageViews?.addView(img)
+                            // }
+                            // 再次执行任务
+                            uiHandler.postDelayed(this, 1000)
+                        }
                     }
                 }
                 if (dealSuccess) {
