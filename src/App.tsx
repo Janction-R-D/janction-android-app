@@ -151,22 +151,36 @@ function App(): React.JSX.Element {
 
     const message = siweMessage.prepareMessage();
 
-    await signMessageAsync({
+    // await signMessageAsync({
+    //   message,
+    // });
+
+    // if (isSuccess) {
+    //   const signature = data as string;
+    //   const params: ParamLogin = {
+    //     message,
+    //     signature,
+    //     is_node: true,
+    //   };
+
+    //   const token = await performLogin(params);
+    //   setToken(token);
+    //   await storeToken(token);
+    // }
+
+    const signature: string = await signMessageAsync({
       message,
     });
 
-    if (isSuccess) {
-      const signature = data as string;
-      const params: ParamLogin = {
-        message,
-        signature,
-        is_node: true,
-      };
+    const params: ParamLogin = {
+      message,
+      signature,
+      is_node: true,
+    };
 
-      const token = await performLogin(params);
-      setToken(token);
-      await storeToken(token);
-    }
+    const token = await performLogin(params);
+    setToken(token);
+    await storeToken(token);
   };
 
   const handleFetchNodeInfos = async () => {
@@ -176,7 +190,7 @@ function App(): React.JSX.Element {
     const params: ParamGetNodeInfos = {};
     const nodeInfos = await fetchNodeInfos(token, params);
     setNodeInfos(nodeInfos);
-  }
+  };
 
   const handleCPUGPUSetting = async () => {
     console.log('handleCPUGPUSetting');
@@ -220,20 +234,28 @@ function App(): React.JSX.Element {
           <Text style={styles.subTitle} key="connect">
             Connect
           </Text>
-          <Text style={styles.text}>1. Connect To Web3 Wallet</Text>
-          <View>
-            <W3mButton connectStyle={styles.button} label="Connect Wallet" />
-          </View>
-          <Text style={styles.text}>2. Sign And Login to Janction</Text>
+          <View style={styles.sectionArea}>
+            <Text style={styles.text}>1. Connect To Web3 Wallet</Text>
+            <View>
+              <W3mButton connectStyle={styles.button} label="Connect Wallet" />
+            </View>
+            <Text style={styles.text}>2. Sign And Login to Janction</Text>
 
-          <View>
-            <CustomButton
-              style={styles.button}
-              onPress={handleLogin}
-              title={'Login'}
-            />
+            <View>
+              {!token && (
+                <CustomButton
+                  style={styles.button}
+                  onPress={handleLogin}
+                  title={'Login'}
+                />
+              )}
+              {token && (
+                <Text style={styles.successText}>
+                  Connect to Janction Successful!
+                </Text>
+              )}
+            </View>
           </View>
-
           <Text style={styles.subTitle} key="online-nodes">
             Online Nodes
           </Text>
@@ -274,7 +296,7 @@ function App(): React.JSX.Element {
 
           <View style={styles.table}>
             {Object.entries(deviceInfo ?? {}).map(([key, value]) => (
-              <View style={styles.row}>
+              <View style={styles.row} key={String(value) + String(key)}>
                 <Text style={styles.cell} key={key}>
                   {key}
                 </Text>
@@ -286,16 +308,19 @@ function App(): React.JSX.Element {
 
             {/* Add more rows as needed */}
           </View>
-
-          <View>
+          <Text style={styles.subTitle} key="debug">
+            Debug
+          </Text>
+          <View style={styles.sectionArea}>
             <Text style={styles.deviceInfoItem} key="nonce">
               {'nonce'}: {nonce ? String(nonce) : 'loading...'}
             </Text>
-          </View>
-          <View>
             <Text style={styles.deviceInfoItem} key="dtoken">
               {'token'}: {String(token)}
             </Text>
+          </View>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>© 2024 - janction.io </Text>
           </View>
         </View>
       </ScrollView>
@@ -306,7 +331,7 @@ function App(): React.JSX.Element {
 const styles = StyleSheet.create({
   sectionContainer: {
     paddingHorizontal: 20,
-
+    paddingBottom: 30,
     // width: '100%',
   },
   sectionTitle: {
@@ -314,6 +339,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   deviceInfoItem: {
+    color: 'white',
     fontSize: 16,
     marginBottom: 4,
   },
@@ -335,8 +361,26 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 10,
   },
+  sectionArea: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingLeft: 10,
+    paddingRight: 10,
+    backgroundColor: '#333',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+    borderBottomLeftRadius: 10,
+  },
   text: {
     color: '#ccc',
+    fontSize: 14,
+    marginTop: 5,
+    marginBottom: 10,
+  },
+  successText: {
+    margin: 'auto',
+    color: '#57d765',
     fontSize: 14,
     marginTop: 5,
   },
@@ -346,7 +390,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 0.25,
     marginTop: 20,
-    color: 'white',
+    marginBottom: 10,
+    color: '#DD5ACC',
   },
   item: {
     color: 'white',
@@ -369,10 +414,11 @@ const styles = StyleSheet.create({
   },
   list: {
     color: '#fff',
-    height: 30,
+    height: 40,
   },
   listRow: {
     marginTop: 8,
+    height: 40,
     flexDirection: 'row',
   },
   nodeGroup: {
@@ -381,24 +427,28 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: '#333',
     borderColor: '#fff',
-    borderWidth: 1,
+    borderWidth: 0,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
     borderBottomRightRadius: 10,
     borderBottomLeftRadius: 10,
   },
   table: {
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: '#fff',
     marginBottom: 10,
     marginTop: 5,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+    borderBottomLeftRadius: 10,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#333',
-    borderWidth: 0.5,
+    borderWidth: 0,
     borderColor: '#fff',
   },
   cell: {
@@ -417,7 +467,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonCell: {},
+  footer: {
+    marginTop: 30,
+  },
+  footerText: {
+    margin: 'auto',
+    color: 'white',
+  },
 });
 
 export default App;
